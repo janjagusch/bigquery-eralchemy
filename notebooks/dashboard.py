@@ -36,25 +36,35 @@ intermediary = bigquery_to_intermediary(TABLES)
 # +
 def _repr_svg_(self):
     # possible values for prog: neato|dot|twopi|circo|fdp|nop
-    return self.draw(format='svg', prog="dot").decode(self.encoding)
+    return self.draw(format="svg", prog="dot").decode(self.encoding)
+
 
 AGraph._repr_svg_ = _repr_svg_
 
 
 # +
-def filter_intermediary(intermediary, filter_datasets=None, filter_tables=None, filter_relations=None):
+def filter_intermediary(
+    intermediary, filter_datasets=None, filter_tables=None, filter_relations=None
+):
     tables, relations = intermediary
     if filter_datasets:
-        tables = [table for table in tables if table.name.split(".")[0] in filter_datasets]
+        tables = [
+            table for table in tables if table.name.split(".")[0] in filter_datasets
+        ]
     if filter_tables:
         filter_table_names = set(table.name for table in filter_tables)
         tables = [table for table in tables if table.name in filter_table_names]
     if filter_relations:
         relations = [relation for relation in relations if relation in filter_relations]
     table_names = set(table.name for table in tables)
-    relations = [relation for relation in relations if relation.left_col in table_names and relation.right_col in table_names]
-    
+    relations = [
+        relation
+        for relation in relations
+        if relation.left_col in table_names and relation.right_col in table_names
+    ]
+
     return tables, relations
+
 
 def remove_columns(tables):
     def make_empty_table(table):
@@ -62,7 +72,7 @@ def remove_columns(tables):
         empty_table.columns = []
         return empty_table
 
-    return [make_empty_table(table) for table in tables]    
+    return [make_empty_table(table) for table in tables]
 
 
 # -
@@ -78,9 +88,15 @@ def render_intermediary(intermediary):
 
 
 # +
-select_datasets = pn.widgets.MultiSelect(name='Select Datasets', value=datasets, options=datasets, height=200)
-select_tables = pn.widgets.MultiSelect(name="Select Tables", value=tables, options=tables, height=200)
-select_relations = pn.widgets.MultiSelect(name="Select Relations", value=relations, options=relations, height=200)
+select_datasets = pn.widgets.MultiSelect(
+    name="Select Datasets", value=datasets, options=datasets, height=200
+)
+select_tables = pn.widgets.MultiSelect(
+    name="Select Tables", value=tables, options=tables, height=200
+)
+select_relations = pn.widgets.MultiSelect(
+    name="Select Relations", value=relations, options=relations, height=200
+)
 
 pane_graph = pn.Pane(render_intermediary(intermediary))
 check_show_columns = pn.widgets.Checkbox(name="Show Columns", value=True)
@@ -89,23 +105,41 @@ check_show_columns = pn.widgets.Checkbox(name="Show Columns", value=True)
 # +
 @pn.depends(select_datasets, watch=True)
 def update_tables(datasets):
-    select_tables.value = [table for table in select_tables.value if table.name.split(".")[0] in datasets]
-    
+    select_tables.value = [
+        table for table in select_tables.value if table.name.split(".")[0] in datasets
+    ]
+
+
 @pn.depends(select_tables, watch=True)
 def update_relations(tables):
     table_names = set(table.name for table in tables)
-    select_relations.value = [relation for relation in select_relations.value if relation.left_col in table_names and relation.right_col in table_names]
-    
-@pn.depends(select_datasets, select_tables, select_relations, check_show_columns, watch=True)
+    select_relations.value = [
+        relation
+        for relation in select_relations.value
+        if relation.left_col in table_names and relation.right_col in table_names
+    ]
+
+
+@pn.depends(
+    select_datasets, select_tables, select_relations, check_show_columns, watch=True
+)
 def update_graph(*args):
     tables, relations = intermediary
     if not check_show_columns.value:
         tables = remove_columns(tables)
-    pane_graph.object = render_intermediary(filter_intermediary((tables, relations), filter_datasets=select_datasets.value, filter_tables=select_tables.value, filter_relations=select_relations.value))
+    pane_graph.object = render_intermediary(
+        filter_intermediary(
+            (tables, relations),
+            filter_datasets=select_datasets.value,
+            filter_tables=select_tables.value,
+            filter_relations=select_relations.value,
+        )
+    )
 
 
 # -
 
-pn.Column(pn.Row(select_datasets, select_tables, select_relations, check_show_columns), pane_graph)
-
-
+pn.Column(
+    pn.Row(select_datasets, select_tables, select_relations, check_show_columns),
+    pane_graph,
+)
