@@ -30,11 +30,11 @@ That's right. You cannot enforce primary or foreign key constraints in BigQuery.
 
 We use the column description field in BigQuery to define relations between columns in a format that we can later parse programmatically.
 
-Let's assume we have a table `a` with a column `id` and another table `a` with a column `a_id` that serves as a foreign key relation to `a.id`.
+Let's assume we have a table `a` with a column `id` and another table `b` with a column `a_id` that serves as a foreign key relation to `a.id`.
 We then add the following description to `b.a_id`:
 
 ```
--> b.id
+-> a.id
 ```
 
 ### Defining Relations to Datasets Explicitly
